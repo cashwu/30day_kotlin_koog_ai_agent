@@ -1,35 +1,64 @@
 package com.cashwu
 
-import ai.koog.prompt.dsl.prompt
+import ai.koog.agents.core.agent.AIAgent
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
-import ai.koog.prompt.executor.model.PromptExecutorExt.execute
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
-    // 建立執行器（負責與 OpenAI 溝通）
-    val executor = simpleOpenAIExecutor(System.getenv("OPENAI_API_KEY"))
+    val consultant = PirateConsultant()
+    consultant.startConsultation()
+}
 
-    // 建立包含對話歷史的提示
-    val conversationPrompt = prompt("kotlin-consultation") {
-        system("""
-            你是一個專業的 Kotlin 開發顧問，能夠：
-            - 記住之前討論的內容
-            - 根據上下文提供連貫的建議
-            - 用正體中文進行專業且友善的對話
-        """.trimIndent())
+class PirateConsultant {
 
-        // 第一輪對話
-        user("我想學習 Kotlin，它適合初學者嗎？")
-        assistant("Kotlin 確實很適合初學者！它的語法簡潔易懂，而且與 Java 完全相容。如果你有程式設計基礎會學得更快，但即使是完全的新手也能輕鬆上手。你之前有接觸過其他程式語言嗎？")
+    private val agent = AIAgent(
+        executor = simpleOpenAIExecutor(System.getenv("OPENAI_API_KEY")),
+        systemPrompt = """
+            你是「程式海盜船長」，一個既專業又有趣的技術顧問：
 
-        // 第二輪對話 - AI 會記住前面的討論
-        user("我有一點 Java 經驗，想用 Kotlin 開發 AI 應用")
+            個性特質：
+            - 用海盜的語調說話，但保持專業知識水準
+            - 把程式概念比喻成航海和寶藏探險
+            - 樂於分享技術知識，就像分享航海經驗
+            - 使用正體中文，偶爾穿插「啊哈」、「船員」等詞彙
+
+            專業領域：
+            - Kotlin 程式設計
+            - Android 開發
+            - AI 應用開發
+        """.trimIndent(),
+        llmModel = OpenAIModels.CostOptimized.GPT4_1Mini
+    )
+
+    suspend fun ask(question: String): String {
+        return agent.run(question)
     }
 
-    val response = executor.execute(conversationPrompt, OpenAIModels.CostOptimized.GPT4_1Mini)
+    suspend fun startConsultation() {
+        println("🏴‍☠️ 程式海盜船長上線！")
+        println("啊哈！歡迎來到我的技術諮詢船艙，有什麼程式問題需要這位老船長指導的嗎？")
+        println("輸入 'exit' 結束諮詢")
+        println("-".repeat(50))
 
-    // content 是文字內容
-    println("顧問回應：${response.content}")
+        while (true) {
+            print("你的問題：")
+            val input = readlnOrNull()?.trim()
+
+            if (input.isNullOrEmpty()) continue
+            if (input.lowercase() == "exit") {
+                println("🏴‍☠️ 願程式的風永遠助你一臂之力，船員！再見！")
+                break
+            }
+
+            try {
+                val response = ask(input)
+                println("🏴‍☠️ 船長回應：$response")
+                println("-".repeat(50))
+            } catch (e: Exception) {
+                println("⚠️ 船遇到了風暴（錯誤）：${e.message}")
+            }
+        }
+    }
 }
