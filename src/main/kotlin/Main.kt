@@ -15,18 +15,25 @@ suspend fun main() {
     }
 
     try {
-        val setup = BasicMultiLLMSetup()
-        val multiExecutor = setup.createBasicMultiExecutor()
-
-        val agent = AIAgent(
-            executor = multiExecutor,
-            systemPrompt = "你是一個智能助手，使用多個 LLM 供應商為使用者提供最佳服務。請用正體中文回答問題。",
-//            llmModel = OpenAIModels.CostOptimized.GPT4_1Mini
-            llmModel = GoogleModels.Gemini2_5Flash
-        )
+        val setup = BasicMultiLLMAssistant()
 
         println("\n✅ 多 LLM 助手系統已就緒！")
 
+        // 顯示可用的任務類型
+        println("\n📋 可用的任務類型：")
+        println("   1. chat - 日常對話")
+        println("   2. data - 資料分析")
+        println("   3. privacy - 隱私保護（本地處理）")
+
+        // 使用者輸入任務類型
+        print("\n請輸入任務類型（chat/data/privacy）：")
+        val taskType = readlnOrNull()?.trim() ?: "chat"
+
+        // 建立對應的 Agent
+        val agent = setup.createAgent(taskType)
+
+        // 使用者輸入問題
+        print("請輸入您的問題：")
         val question = "你好，你現在正在使用哪個模型回答問題？ 請具體回答出那一個模型"
 
         println("\n👤 使用者：$question")
