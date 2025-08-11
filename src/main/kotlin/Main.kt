@@ -1,38 +1,31 @@
 package com.cashwu
 
 import ai.koog.agents.core.agent.AIAgent
-import ai.koog.prompt.executor.clients.google.GoogleModels
+import ai.koog.agents.core.tools.ToolRegistry
+import ai.koog.agents.ext.tool.AskUser
+import ai.koog.agents.ext.tool.ExitTool
+import ai.koog.agents.ext.tool.SayToUser
+import ai.koog.prompt.executor.clients.openai.OpenAIModels
+import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
-    println("🤖 帶有 Fallback 機制的多 LLM 助手系統啟動中...")
 
-    // 顯示可用的供應商
-    println("📋 可用的 LLM 供應商：")
-    ApiKeyManager.getAvailableProviders().forEach { provider ->
-        println("   ✅ $provider")
+    // 註冊工具
+    val toolRegistry = ToolRegistry {
+        tool(SayToUser)
+        tool(AskUser)
+        tool(ExitTool)
     }
 
-    try {
-        val setup = FallbackMultiLLMSetup()
+    val agent = AIAgent(
+        executor = simpleOpenAIExecutor(System.getenv("OPENAI_API_KEY")),
+//        systemPrompt = "請使用 AskUser 詢問使用者的姓名，然後用 SayToUser 打招呼。",
+        systemPrompt = "請先詢問使用者的姓名，然後在跟使用者打招呼。",
+        toolRegistry = toolRegistry,
+        llmModel = OpenAIModels.CostOptimized.GPT4_1Mini
+    )
 
-        println("\n✅ Fallback 多 LLM 助手系統已就緒！")
-        println("🛡️  當主要供應商失敗時，系統會自動切換到備用供應商")
-
-        // 建立簡化的 Fallback 對話
-        val chat = setup.createSimpleFallbackChat()
-
-        val question = "你好，你現在正在使用哪個模型回答問題？ 請具體回答出那一個模型"
-
-        println("\n👤 使用者：$question")
-        println("🤖 AI 回答：")
-
-        val response = chat.chat(question)
-        println(response)
-
-    } catch (e: Exception) {
-        println("❌ 系統完全失敗：${e.message}")
-        e.printStackTrace()
-    }
+    agent.run("你好！")
 }
