@@ -9,43 +9,63 @@ import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
-    val toolRegistry = ToolRegistry {
-        tool(SayToUser)
-    }
+    println("=== 🧮 計算專家 (溫度: 1, 迭代: 30) ===")
+    val calculatorAgent = createOptimizedAgent("calculator")
+    calculatorAgent.run("計算 25% 的 360 是多少？")
 
-    // 設定較少的迭代次數 - 適合簡單任務
-    val quickAgent = AIAgent(
+    println("\n=== 💼 商業顧問 (溫度: 0.4, 迭代: 40) ===")
+    val advisorAgent = createOptimizedAgent("advisor")
+    advisorAgent.run("小型餐廳如何增加客流量？")
+
+    println("\n=== 🎨 創意夥伴 (溫度: 1.1, 迭代: 50) ===")
+    val creativeAgent = createOptimizedAgent("creative")
+    creativeAgent.run("為環保主題設計一個有趣的廣告標語")
+}
+
+data class AgentProfile(
+    val name: String,
+    val temperature: Double,
+    val maxIterations: Int,
+    val description: String
+)
+
+// 預設的 Agent 配置檔案
+val agentProfiles = mapOf(
+    "calculator" to AgentProfile(
+        name = "計算專家",
+        temperature = 0.1,
+        maxIterations = 30,
+        description = "精確計算，不需要複雜思考"
+    ),
+    "advisor" to AgentProfile(
+        name = "商業顧問",
+        temperature = 0.4,
+        maxIterations = 40,
+        description = "需要分析但保持專業"
+    ),
+    "creative" to AgentProfile(
+        name = "創意夥伴",
+        temperature = 1.1,
+        maxIterations = 50,
+        description = "發揮創意，允許深度發想"
+    )
+)
+
+fun createOptimizedAgent(profileKey: String): AIAgent<String, String> {
+    val profile = agentProfiles[profileKey]
+        ?: error("未知的 Agent 類型: $profileKey")
+
+    return AIAgent(
         executor = simpleOpenAIExecutor(ApiKeyManager.openAIApiKey!!),
+        toolRegistry = ToolRegistry {
+            tool(SayToUser)
+        },
         systemPrompt = """
-            你是一個快速回應助手。收到問題後，直接給出簡潔的答案，
-            不需要過度思考或使用工具。
-            使用正體中文回答
+            你是一個${profile.name}，專門提供${profile.description}的服務。
+            請根據你的專業特性回應用戶的請求。
         """.trimIndent(),
-        toolRegistry = toolRegistry,
-        maxIterations = 30, // 最多 30 個步驟
+        temperature = profile.temperature,
+        maxIterations = profile.maxIterations,
         llmModel = OpenAIModels.CostOptimized.GPT4_1Mini
     )
-
-    // 設定較多的迭代次數 - 適合需要深度思考的任務
-    val thoughtfulAgent = AIAgent(
-        executor = simpleOpenAIExecutor(ApiKeyManager.openAIApiKey),
-        systemPrompt = """
-            你是一個深思熟慮的助手。對於複雜問題，你會：
-            1. 先用 SayToUser 說明你的思考過程
-            2. 分析問題的不同面向
-            3. 最後提供完整的建議
-            使用正體中文回答
-        """.trimIndent(),
-        toolRegistry = toolRegistry,
-        maxIterations = 70, // 允許更多思考步驟
-        llmModel = OpenAIModels.CostOptimized.GPT4_1Mini
-    )
-
-    val question = "如何提升工作效率？"
-
-    println("=== ⚡ 快速回應模式 (MaxIterations: 5) ===")
-    quickAgent.run(question)
-
-    println("\n=== 🤔 深度思考模式 (MaxIterations: 10) ===")
-    thoughtfulAgent.run(question)
 }
