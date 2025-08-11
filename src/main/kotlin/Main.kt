@@ -21,16 +21,17 @@ suspend fun main() {
     val agent = AIAgent(
         executor = simpleOpenAIExecutor(System.getenv("OPENAI_API_KEY")),
         systemPrompt = """
-            你是一個數學助手。當使用者需要計算兩個數字相加時：
-            1. 使用 add_numbers 工具進行計算
-            2. 使用 SayToUser 工具告訴使用者結果
-
+            你是一個數學助手。你有一些數學工具可以使用
             請用友善的正體中文回應
         """.trimIndent(),
         toolRegistry = toolRegistry,
-        llmModel = OpenAIModels.CostOptimized.GPT4_1Mini
+        llmModel = OpenAIModels.Chat.GPT4_1
     )
 
     // 測試加法功能
-    agent.run("請幫我計算 15 + 27")
+    agent.run("請幫我計算 25 + 17")
+    // 測試乘法功能
+    agent.run("請幫我計算 4 * 5")
+    // 測試質數功能
+    agent.run("請問一下 5 是不是質數")
 }
