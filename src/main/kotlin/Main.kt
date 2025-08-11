@@ -1,60 +1,51 @@
 package com.cashwu
 
 import ai.koog.agents.core.agent.AIAgent
+import ai.koog.agents.core.tools.ToolRegistry
+import ai.koog.agents.ext.tool.SayToUser
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
-    val mathAgent = createMathTutorAgent()
-    val creativeAgent = createCreativeWriterAgent()
-    val serviceAgent = createCustomerServiceAgent()
+    val toolRegistry = ToolRegistry {
+        tool(SayToUser)
+    }
 
-    println("=== 數學計算 (Temperature: 0.1) ===")
-    println(mathAgent.run("請解釋 2x + 5 = 15 的解法"))
-
-    println("\n=== 創意寫作 (Temperature: 1.0) ===")
-    println(creativeAgent.run("請用「雨夜」作為主題，寫一個短故事的開頭"))
-
-    println("\n=== 客服對話 (Temperature: 0.6) ===")
-    println(serviceAgent.run("我的訂單還沒收到，能幫我查詢一下嗎？"))
-}
-
-fun createMathTutorAgent(): AIAgent<String, String> {
-    return AIAgent(
+    // 設定較少的迭代次數 - 適合簡單任務
+    val quickAgent = AIAgent(
         executor = simpleOpenAIExecutor(ApiKeyManager.openAIApiKey!!),
         systemPrompt = """
-            你是一個數學老師，需要提供準確的數學解答。
-            請一步一步解釋計算過程，確保答案的正確性。
+            你是一個快速回應助手。收到問題後，直接給出簡潔的答案，
+            不需要過度思考或使用工具。
+            使用正體中文回答
         """.trimIndent(),
-        temperature = 0.1, // 低溫度確保答案的一致性和準確性
+        toolRegistry = toolRegistry,
+        maxIterations = 30, // 最多 30 個步驟
         llmModel = OpenAIModels.CostOptimized.GPT4_1Mini
     )
-}
 
-// 場景 2：創意寫作助手 - 需要想像力
-fun createCreativeWriterAgent(): AIAgent<String, String> {
-    return AIAgent(
-        executor = simpleOpenAIExecutor(ApiKeyManager.openAIApiKey!!),
+    // 設定較多的迭代次數 - 適合需要深度思考的任務
+    val thoughtfulAgent = AIAgent(
+        executor = simpleOpenAIExecutor(ApiKeyManager.openAIApiKey),
         systemPrompt = """
-            你是一個富有想像力的創意寫作導師。
-            幫助用戶發揮創意，提供多元化的寫作靈感和想法。
+            你是一個深思熟慮的助手。對於複雜問題，你會：
+            1. 先用 SayToUser 說明你的思考過程
+            2. 分析問題的不同面向
+            3. 最後提供完整的建議
+            使用正體中文回答
         """.trimIndent(),
-        temperature = 1.0, // 高溫度激發創造力和多樣性
+        toolRegistry = toolRegistry,
+        maxIterations = 70, // 允許更多思考步驟
         llmModel = OpenAIModels.CostOptimized.GPT4_1Mini
     )
-}
 
-// 場景 3：客服助手 - 需要平衡專業性與親和力
-fun createCustomerServiceAgent(): AIAgent<String, String> {
-    return AIAgent(
-        executor = simpleOpenAIExecutor(ApiKeyManager.openAIApiKey!!),
-        systemPrompt = """
-            你是一個專業的客服助手，既要保持專業性
-            又要展現親和力，為客戶提供有幫助的服務。
-        """.trimIndent(),
-        temperature = 0.6, // 中等溫度平衡穩定性和靈活性
-        llmModel = OpenAIModels.CostOptimized.GPT4_1Mini
-    )
+    val question = "如何提升工作效率？"
+
+    println("=== ⚡ 快速回應模式 (MaxIterations: 5) ===")
+    quickAgent.run(question)
+
+    println("\n=== 🤔 深度思考模式 (MaxIterations: 10) ===")
+    thoughtfulAgent.run(question)
 }
