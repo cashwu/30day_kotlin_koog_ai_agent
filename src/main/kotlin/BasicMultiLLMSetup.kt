@@ -17,7 +17,7 @@ import ai.koog.prompt.llm.OllamaModels
  * @since 2025/08/11
  *
  */
-class BasicMultiLLMSetup {
+open class BasicMultiLLMSetup {
     fun createBasicMultiExecutor(): MultiLLMPromptExecutor {
 
         val executors = mutableMapOf<LLMProvider, LLMClient>()

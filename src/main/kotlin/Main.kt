@@ -6,7 +6,7 @@ import ai.koog.prompt.executor.clients.google.GoogleModels
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
-    println("🤖 多 LLM 助手系統啟動中...")
+    println("🤖 帶有 Fallback 機制的多 LLM 助手系統啟動中...")
 
     // 顯示可用的供應商
     println("📋 可用的 LLM 供應商：")
@@ -15,34 +15,24 @@ suspend fun main() {
     }
 
     try {
-        val setup = BasicMultiLLMAssistant()
+        val setup = FallbackMultiLLMSetup()
 
-        println("\n✅ 多 LLM 助手系統已就緒！")
+        println("\n✅ Fallback 多 LLM 助手系統已就緒！")
+        println("🛡️  當主要供應商失敗時，系統會自動切換到備用供應商")
 
-        // 顯示可用的任務類型
-        println("\n📋 可用的任務類型：")
-        println("   1. chat - 日常對話")
-        println("   2. data - 資料分析")
-        println("   3. privacy - 隱私保護（本地處理）")
+        // 建立簡化的 Fallback 對話
+        val chat = setup.createSimpleFallbackChat()
 
-        // 使用者輸入任務類型
-        print("\n請輸入任務類型（chat/data/privacy）：")
-        val taskType = readlnOrNull()?.trim() ?: "chat"
-
-        // 建立對應的 Agent
-        val agent = setup.createAgent(taskType)
-
-        // 使用者輸入問題
-        print("請輸入您的問題：")
         val question = "你好，你現在正在使用哪個模型回答問題？ 請具體回答出那一個模型"
 
         println("\n👤 使用者：$question")
         println("🤖 AI 回答：")
-        val response = agent.run(question)
+
+        val response = chat.chat(question)
         println(response)
 
     } catch (e: Exception) {
-        println("❌ 系統啟動失敗：${e.message}")
+        println("❌ 系統完全失敗：${e.message}")
         e.printStackTrace()
     }
 }
