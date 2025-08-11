@@ -2,6 +2,7 @@ package com.cashwu
 
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.tools.ToolRegistry
+import ai.koog.agents.core.tools.reflect.tools
 import ai.koog.agents.ext.tool.SayToUser
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
@@ -13,7 +14,8 @@ suspend fun main() {
     // 註冊工具
     val toolRegistry = ToolRegistry {
         tool(SayToUser)
-        tool(AddTool)
+//        tool(AddTool)
+        tools(MathToolSet())
     }
 
     val agent = AIAgent(
