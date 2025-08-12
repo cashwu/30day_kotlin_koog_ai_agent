@@ -21,35 +21,31 @@ suspend fun main() {
     )
 
     try {
-        // 設定 5 秒超時
-        withTimeout(5000) {
-
-            val result = agent.run("你好")
-            // delay 6 秒來模型錯誤的情況
-            delay(6000)
+        simpleRetry(maxAttempts = 3, delayMs = 2000) {
+            val result= agent.run("你好")
+            // 直接丟出 error 來模擬未知的錯誤
+            throw Exception("unknown error")
             println("✅ Agent 建立成功：$result")
         }
-    } catch (e: TimeoutCancellationException) {
-        println("⏰ 回應時間過長，請檢查網路連線後再試")
     } catch (e: Exception) {
-        when {
-            // 網路連線問題
-            e.message?.contains("network", ignoreCase = true) == true ||
-                    e.message?.contains("connection", ignoreCase = true) == true ||
-                    e.message?.contains("timeout", ignoreCase = true) == true -> {
-                println("🌐 網路連線問題，請檢查網路設定後再試")
-            }
+        println("❌ 經過多次嘗試後仍無法處理您的請求，請稍後再試")
+    }
+}
 
-            // 服務不可用
-            e.message?.contains("service", ignoreCase = true) == true ||
-                    e.message?.contains("unavailable", ignoreCase = true) == true -> {
-                 println("🚫 AI 服務暫時不可用，請稍後再試")
-            }
-
-            else -> {
-                println("網路錯誤詳情：${e.message}") // 開發時用於除錯
-                println("❓ 處理請求時發生問題，請稍後再試")
-            }
+suspend fun <T> simpleRetry(
+    maxAttempts: Int = 3,
+    delayMs: Long = 1000,
+    operation: suspend () -> T
+): T {
+    repeat(maxAttempts) { attempt ->
+        try {
+            return operation()
+        } catch (e: Exception) {
+            println("嘗試 ${attempt + 1} 失敗：${e.message}")
+            delay(delayMs)
         }
     }
+
+    // 最後一次嘗試，如果失敗就讓異常拋出
+    return operation()
 }
