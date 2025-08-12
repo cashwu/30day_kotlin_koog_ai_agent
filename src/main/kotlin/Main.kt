@@ -1,71 +1,44 @@
 package com.cashwu
 
 import ai.koog.agents.core.agent.AIAgent
-import ai.koog.agents.core.tools.ToolRegistry
-import ai.koog.agents.ext.tool.SayToUser
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
-    println("=== 🧮 計算專家 (溫度: 1, 迭代: 30) ===")
-    val calculatorAgent = createOptimizedAgent("calculator")
-    calculatorAgent.run("計算 25% 的 360 是多少？")
 
-    println("\n=== 💼 商業顧問 (溫度: 0.4, 迭代: 40) ===")
-    val advisorAgent = createOptimizedAgent("advisor")
-    advisorAgent.run("小型餐廳如何增加客流量？")
+    try {
+        val agent = AIAgent(
+            executor = simpleOpenAIExecutor(ApiKeyManager.openAIApiKey!!),
+//            executor = simpleOpenAIExecutor("fake api key"),
+            systemPrompt = "你是一個友善的 AI 助手",
+            llmModel = OpenAIModels.CostOptimized.GPT4_1Mini
+        )
 
-    println("\n=== 🎨 創意夥伴 (溫度: 1.1, 迭代: 50) ===")
-    val creativeAgent = createOptimizedAgent("creative")
-    creativeAgent.run("為環保主題設計一個有趣的廣告標語")
-}
+        // 測試是否能正常運作
+        val result = agent.run("你好")
+        println("✅ Agent 建立成功：$result")
+    } catch (e: Exception) {
+        when {
+            // API 金鑰相關錯誤
+            e.message?.contains("api", ignoreCase = true) == true ||
+                    e.message?.contains("key", ignoreCase = true) == true ||
+                    e.message?.contains("auth", ignoreCase = true) == true -> {
+                println("❌ API 金鑰問題：請檢查您的 API 金鑰是否正確且有效")
+            }
 
-data class AgentProfile(
-    val name: String,
-    val temperature: Double,
-    val maxIterations: Int,
-    val description: String
-)
+            // 配額相關錯誤
+            e.message?.contains("quota", ignoreCase = true) == true ||
+                    e.message?.contains("limit", ignoreCase = true) == true -> {
+                println("⏱️ API 配額已滿：請稍後再試或檢查您的使用配額")
+            }
 
-// 預設的 Agent 配置檔案
-val agentProfiles = mapOf(
-    "calculator" to AgentProfile(
-        name = "計算專家",
-        temperature = 0.1,
-        maxIterations = 30,
-        description = "精確計算，不需要複雜思考"
-    ),
-    "advisor" to AgentProfile(
-        name = "商業顧問",
-        temperature = 0.4,
-        maxIterations = 40,
-        description = "需要分析但保持專業"
-    ),
-    "creative" to AgentProfile(
-        name = "創意夥伴",
-        temperature = 1.1,
-        maxIterations = 50,
-        description = "發揮創意，允許深度發想"
-    )
-)
-
-fun createOptimizedAgent(profileKey: String): AIAgent<String, String> {
-    val profile = agentProfiles[profileKey]
-        ?: error("未知的 Agent 類型: $profileKey")
-
-    return AIAgent(
-        executor = simpleOpenAIExecutor(ApiKeyManager.openAIApiKey!!),
-        toolRegistry = ToolRegistry {
-            tool(SayToUser)
-        },
-        systemPrompt = """
-            你是一個${profile.name}，專門提供${profile.description}的服務。
-            請根據你的專業特性回應用戶的請求。
-        """.trimIndent(),
-        temperature = profile.temperature,
-        maxIterations = profile.maxIterations,
-        llmModel = OpenAIModels.CostOptimized.GPT4_1Mini
-    )
+            // 其他 API 錯誤
+            else -> {
+                println("原始錯誤訊息：${e.message}")
+                println("❓ 無法連接到 AI 服務，請稍後再試")
+            }
+        }
+    }
 }
