@@ -6,24 +6,35 @@ import ai.koog.prompt.executor.clients.openai.OpenAILLMClient
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
 
-    // 建立 OpenAI 客戶端和圖像分析器
     val client = OpenAILLMClient(ApiKeyManager.openAIApiKey!!)
-    val analyzer = ImageAnalyzer.ImageAnalyzer(client)
+    val analyzer = AdvancedImageAnalyzer(client)
 
-    println("=== Koog 圖像處理範例 ===\n")
-
-    // 範例 1：描述一張風景照片
-    println("1. 圖像內容描述")
-    val description = analyzer.describeImage(
+    // 範例 1：處理網路圖片
+    println("=== 網路圖片分析 ===")
+    val urlResult = analyzer.describeImageAdvanced(
         imagePath = "https://images.pexels.com/photos/1172064/pexels-photo-1172064.jpeg",
-        detailLevel = "簡潔"
+        fileName = "landscape.jpg",
+        format = "jpg"
     )
-    println("圖片描述：$description\n")
+    println(urlResult)
 
-    // 範例 2：從截圖中提取文字（如程式碼截圖）
-    println("2. 文字提取（OCR）")
-    val extractedText = analyzer.extractText(
-        imagePath = "/Users/cash/Downloads/ocr.png"
+    // 範例 2：處理本地檔案
+    println("\n=== 本地檔案分析 ===")
+    val localResult = analyzer.describeImageAdvanced(
+        imagePath = "/Users/cash/Downloads/ocr.png",
+        format = "png"
     )
-    println("提取的文字：\n$extractedText\n")
+    println(localResult)
+
+    // 範例 3：批次處理多張圖片
+    println("\n=== 批次圖片比較 ===")
+    val imagePaths = listOf(
+        "https://images.pexels.com/photos/1172064/pexels-photo-1172064.jpeg",
+        "/Users/cash/Downloads/ocr.png"
+    )
+    val batchResult = analyzer.batchImageAnalysis(
+        imagePaths = imagePaths,
+        prompt = "比較這兩張圖片的風格、色調和主題"
+    )
+    println(batchResult)
 }
