@@ -21,6 +21,9 @@ object ApiKeyManager {
         if (openWeatherApiKey.isNullOrBlank()) {
             println("⚠️ 警告：未找到 OPENWEATHER_API_KEY 環境變數")
         }
+        if (googleApiKey.isNullOrBlank()) {
+            println("⚠️ 警告：未找到 OPENAI_API_KEY 環境變數")
+        }
     }
 
     // 檢查可用的供應商
