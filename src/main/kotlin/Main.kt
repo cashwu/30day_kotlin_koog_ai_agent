@@ -1,21 +1,29 @@
 package com.cashwu
 
+import ai.koog.prompt.executor.clients.openai.OpenAILLMClient
+
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
 
-    println("🌤️ 非同步天氣查詢工具展示")
-    println("=".repeat(40))
+    // 建立 OpenAI 客戶端和圖像分析器
+    val client = OpenAILLMClient(ApiKeyManager.openAIApiKey!!)
+    val analyzer = ImageAnalyzer.ImageAnalyzer(client)
 
-    val weatherAgent = WeatherAgent()
+    println("=== Koog 圖像處理範例 ===\n")
 
-    println("\n📋 測試天氣查詢功能")
-    println("-".repeat(40))
+    // 範例 1：描述一張風景照片
+    println("1. 圖像內容描述")
+    val description = analyzer.describeImage(
+        imagePath = "https://images.pexels.com/photos/1172064/pexels-photo-1172064.jpeg",
+        detailLevel = "簡潔"
+    )
+    println("圖片描述：$description\n")
 
-    val query = "台中市今天天氣如何？"
-    val response = weatherAgent.queryWeather(query)
-    println("使用者：$query")
-    println("天氣助手：$response")
-
-    println("\n🎊 測試完成！")
+    // 範例 2：從截圖中提取文字（如程式碼截圖）
+    println("2. 文字提取（OCR）")
+    val extractedText = analyzer.extractText(
+        imagePath = "/Users/cash/Downloads/ocr.png"
+    )
+    println("提取的文字：\n$extractedText\n")
 }
