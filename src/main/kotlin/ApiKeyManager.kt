@@ -12,6 +12,17 @@ object ApiKeyManager {
     val googleApiKey: String? = System.getenv("GOOGLE_API_KEY")
     val ollamaBaseUrl: String? = System.getenv("OLLAMA_BASE_URL")
 
+    val openWeatherApiKey: String? = System.getenv("OPENWEATHER_API_KEY")
+
+    init {
+        if (openAIApiKey.isNullOrBlank()) {
+            println("⚠️ 警告：未找到 OPENAI_API_KEY 環境變數")
+        }
+        if (openWeatherApiKey.isNullOrBlank()) {
+            println("⚠️ 警告：未找到 OPENWEATHER_API_KEY 環境變數")
+        }
+    }
+
     // 檢查可用的供應商
     fun getAvailableProviders(): List<String> {
         val available = mutableListOf<String>()
