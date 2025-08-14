@@ -6,44 +6,23 @@ import ai.koog.prompt.executor.clients.openai.OpenAILLMClient
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
+    // 建立 OpenAI 客戶端和音訊轉錄器
+    val client = OpenAILLMClient(ApiKeyManager.openAIApiKey!!)
+    val transcriber = AudioTranscriber(client)
 
-    // 初始化 AI 客戶端
-    val client = GoogleLLMClient(ApiKeyManager.googleApiKey!!)
-
-    // 建立文件分析器
-    val documentSummarizer = DocumentSummarizer(client)
-
-    // 文件路徑範例
-    val pdfPath = "/Users/cash/Downloads/file.pdf"
-    val txtPath = "/Users/cash/Downloads/file.txt"
-    val mdPath = "/Users/cash/Downloads/file.md"
+    println("=== Koog 音訊處理範例 ===\n")
 
     try {
-        // 1. 產生 PDF 文件摘要
-        println("=== PDF 文件摘要 ===")
-        val pdfSummary = documentSummarizer.summarizeDocument(pdfPath)
-        println(pdfSummary)
+        // 範例 1：處理本地音訊檔案
+        println("1. 本地音訊檔案轉錄")
+        val localTranscription = transcriber.transcribeAudio("/Users/cash.wu/Downloads/podcast.mp3")
+//        val localTranscription = transcriber.transcribeAudio("/Users/cash/Downloads/podcast.mp3")
+        println("轉錄結果：$localTranscription\n")
 
-        // 2. 提取文字文件關鍵要點
-        println("\n=== 文字文件關鍵要點 ===")
-        val txtKeyPoints = documentSummarizer.extractKeyPoints(txtPath)
-        println(txtKeyPoints)
-
-        // 3. 分析 Markdown 文件結構
-        println("\n=== Markdown 文件結構分析 ===")
-        val mdStructure = documentSummarizer.analyzeStructure(mdPath)
-        println(mdStructure)
-
-        // 4. 針對文件提問
-        println("\n=== 問答 ===")
-        val answer = documentSummarizer.askQuestion(
-            pdfPath,
-            "跟 apple 有沒有什麼關係 ?"
-        )
-        println(answer)
+        // 範例 2：處理網路音訊檔案（如果有的話）
+//         val urlTranscription = transcriber.transcribeAudio("https://example.com/audio.mp3")
 
     } catch (e: Exception) {
-        println("處理文件時發生錯誤：${e.message}")
-        e.printStackTrace()
+        println("轉錄失敗：${e.message}")
     }
 }
