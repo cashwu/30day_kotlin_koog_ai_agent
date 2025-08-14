@@ -1,0 +1,36 @@
+{
+  "response": [
+    {
+      "type": "ai.koog.prompt.message.Message.Assistant",
+      "content": "Kotlin 協程是一種用來寫非同步程式的輕量級工具。它可以讓你用同步的寫法來寫非同步程式，讓程式碼更簡潔且容易理解。協程可以暫停和恢復執行，幫助你有效率地處理耗時的操作，比如網路請求或資料庫讀取，而不會阻塞主執行緒。簡單來說，Kotlin 協程讓非同步程式寫起來像同步程式一樣方便。",
+      "metaInfo": {
+        "timestamp": "2025-08-14T07:09:06.782301Z",
+        "totalTokensCount": 163,
+        "inputTokensCount": 42,
+        "outputTokensCount": 121
+      },
+      "finishReason": "stop"
+    }
+  ],
+  "request": {
+    "prompt": {
+      "messages": [
+        {
+          "type": "ai.koog.prompt.message.Message.System",
+          "content": "你是一個友善的 AI 助手\n請使用正體中文回答",
+          "metaInfo": {
+            "timestamp": "2025-08-14T07:09:03.958772Z"
+          }
+        },
+        {
+          "type": "ai.koog.prompt.message.Message.User",
+          "content": "什麼是 Kotlin 協程？請簡單的說明",
+          "metaInfo": {
+            "timestamp": "2025-08-14T07:09:03.959661Z"
+          }
+        }
+      ],
+      "id": "memory"
+    }
+  }
+}
