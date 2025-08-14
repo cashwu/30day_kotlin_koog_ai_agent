@@ -1,21 +1,26 @@
 package com.cashwu
 
-import ai.koog.prompt.cache.files.FilePromptCache
-import ai.koog.prompt.cache.memory.InMemoryPromptCache
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import ai.koog.prompt.executor.model.PromptExecutorExt.execute
 import ai.koog.prompt.cache.model.PromptCache
+import ai.koog.prompt.cache.redis.RedisPromptCache
 import ai.koog.prompt.dsl.prompt
-import java.nio.file.Path
+import io.lettuce.core.RedisClient
+import kotlin.time.Duration.Companion.days
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
-    // 建立檔案快取，指定快取目錄和最大檔案數量
-    val cache = FilePromptCache(
-        Path.of("cache/prompts"),
-        50
+
+    // 建立 Redis 客戶端連線
+    val client = RedisClient.create("redis://:cash1234@localhost:6379")
+
+    // 建立 Redis 快取，設定前綴和 TTL
+    val cache = RedisPromptCache(
+        client,
+        "ai-app-cache:",
+        1.days  // 快取保存 7 天
     )
 
     val executor = simpleOpenAIExecutor(ApiKeyManager.openAIApiKey!!)
@@ -36,31 +41,35 @@ suspend fun main() {
 
     val promptRequest = PromptCache.Request.create(prompt, emptyList())
 
-    println("=== 第一次詢問（會呼叫 API）===")
-    var cachedResponse = cache.get(promptRequest)
-    if (cachedResponse != null) {
-        println("AI (從檔案快取載入): ${cachedResponse.first().content}")
-    } else {
-        val response = executor.execute(prompt, OpenAIModels.CostOptimized.GPT4_1Mini)
+    try {
+        println("=== 第一次詢問（會呼叫 API）===")
+        var cachedResponse = cache.get(promptRequest)
+        if (cachedResponse != null) {
+            println("AI (從 Redis 快取載入): ${cachedResponse.first().content}")
+        } else {
+            val response = executor.execute(prompt, OpenAIModels.CostOptimized.GPT4_1Mini)
 
-        // 將回應存入檔案快取
-        cache.put(promptRequest, listOf(response))
+            // 將回應存入 Redis 快取
+            cache.put(promptRequest, listOf(response))
 
-        println("AI : ${response.content}")
-        println("(回應已存入檔案快取)")
-    }
+            println("AI : ${response.content}")
+            println("(回應已存入 Redis 快取)")
+        }
 
-    println("\n=== 第二次詢問相同問題（使用檔案快取）===")
-    cachedResponse = cache.get(promptRequest)
-    if (cachedResponse != null) {
-        println("AI (使用快取回應): ${cachedResponse.first().content}")
-    } else {
-        val response = executor.execute(prompt, OpenAIModels.CostOptimized.GPT4_1Mini)
+        println("\n=== 第二次詢問相同問題（使用 Redis 快取）===")
+        cachedResponse = cache.get(promptRequest)
+        if (cachedResponse != null) {
+            println("AI (從 Redis 快取載入): ${cachedResponse.first().content}")
+        } else {
+            val response = executor.execute(prompt, OpenAIModels.CostOptimized.GPT4_1Mini)
 
-        // 將回應存入檔案快取
-        cache.put(promptRequest, listOf(response))
+            // 將回應存入 Redis 快取
+            cache.put(promptRequest, listOf(response))
 
-        println("AI : ${response.content}")
-        println("(回應已存入檔案快取)")
+            println("AI : ${response.content}")
+            println("(回應已存入 Redis 快取)")
+        }
+    } finally {
+        cache.close()
     }
 }
