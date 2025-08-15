@@ -5,54 +5,26 @@ import kotlinx.coroutines.delay
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
-    val greeter = PersonalizedGreeter()
 
-    println("🤖 個人化問候助手啟動")
-    println("=".repeat(50))
+    // 建立客服機器人
+    val bot = EventCustomerServiceBot().createBot()
 
-    // === 第一次互動：新使用者 ===
-    println("\n👋 第一次見面")
-    println("=".repeat(20))
-
-    val firstResponse = greeter.greetUser(
-        userInput = "你好"
+    // 模擬客戶對話
+    val customerQuestions = listOf(
+        "你好，請問你們的營業時間是什麼時候？",
+        "運費是怎麼計算的？"
     )
 
-    println("使用者：你好")
-    println("助手：${firstResponse.response}")
-    println("📊 記憶體狀態：${if (firstResponse.hasMemory) "有記憶" else "無記憶"}")
+    customerQuestions.forEach { question ->
+        println("👤 客戶問題：$question")
 
-    delay(1000)
+        try {
+            val response = bot.run(question)
+            println("🤖 客服回應：$response")
+        } catch (e: Exception) {
+            println("💥 處理失敗：${e.message}")
+        }
 
-    // === 自我介紹：儲存姓名 ===
-    println("\n📝 自我介紹")
-    println("=".repeat(20))
-
-    val introResponse = greeter.greetUser(
-        userInput = "我是 Cash"
-    )
-
-    println("使用者：我是 Cash")
-    println("助手：${introResponse.response}")
-    println("📊 記憶體狀態：${if (introResponse.hasMemory) "有記憶" else "無記憶"}")
-    println("👤 記住的姓名：${introResponse.userName ?: "未記住"}")
-
-    delay(1000)
-
-    // === 第二次互動：展現記憶 ===
-    println("\n🎯 個人化服務")
-    println("=".repeat(20))
-
-    val personalizedResponse = greeter.greetUser(
-        userInput = "今天天氣如何？"
-    )
-
-    println("使用者：今天天氣如何？")
-    println("助手：${personalizedResponse.response}")
-    println("📊 記憶體狀態：${if (personalizedResponse.hasMemory) "有記憶" else "無記憶"}")
-    println("👤 識別身份：${personalizedResponse.userName ?: "未識別"}")
-
-    delay(1000)
-
-    println("\n✨ 記憶體系統展示完成！")
+        println("\n" + "=".repeat(60) + "\n")
+    }
 }
