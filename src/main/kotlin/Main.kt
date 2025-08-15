@@ -20,14 +20,12 @@ suspend fun main() {
     // 流式執行
     println("AI 正在回應...")
 
-    with(SimpleStreamingMonitor()) {
-        executor.executeStreaming(prompt, OpenAIModels.CostOptimized.GPT4_1Mini)
-            .withPerformanceTracking()
-            .collect { token ->
-                // 即時輸出每個文字片段
-                print(token)
-            }
-    }
+    val streamingWithTimeout = StreamingWithTimeout(executor)
+    streamingWithTimeout.execute(prompt, OpenAIModels.CostOptimized.GPT4_1Mini)
+        .collect { token ->
+            // 即時輸出每個文字片段
+            print(token)
+        }
 
     println("\n回應完成！")
 }
