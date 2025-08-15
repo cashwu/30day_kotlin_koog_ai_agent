@@ -29,11 +29,15 @@ class EventCustomerServiceBot {
             // 安裝事件處理功能
             install(EventHandler) {
 
+                var errorCount = 0
+                var startTime = 0L
+                val toolUsageCount = mutableMapOf<String, Int>()
+
                 // 當客服機器人開始工作時
                 onBeforeAgentStarted { eventContext ->
                     val currentTime = LocalDateTime.now()
                         .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-
+                    startTime = System.currentTimeMillis()
                     println("=".repeat(50))
                     println("🤖 客服機器人已啟動")
                     println("⏰ 開始時間：$currentTime")
@@ -43,12 +47,21 @@ class EventCustomerServiceBot {
                     println("=".repeat(50))
                 }
 
+                onBeforeAgentStarted { eventContext ->
+                    println("第二個 AgentStarted Event")
+                }
+
                 // 當開始使用工具時（比如查詢資料庫、搜尋資訊等）
                 onToolCall { eventContext ->
+                    // 統計工具使用次數
+                    toolUsageCount[eventContext.tool.name] =
+                        toolUsageCount.getOrDefault(eventContext.tool.name, 0) + 1
+
                     println("🔧 工具開始執行：")
                     println("   工具名稱：${eventContext.tool.name}")
                     println("   輸入參數：${eventContext.toolArgs}")
                     println("   執行 ID：${eventContext.runId}")
+                    println("   ${eventContext.tool.name} 已使用 ${toolUsageCount[eventContext.tool.name]} 次")
                     println("-".repeat(30))
                 }
 
@@ -68,15 +81,19 @@ class EventCustomerServiceBot {
 
                 // 當 Agent 執行完成時
                 onAgentFinished { eventContext ->
+                    val duration = System.currentTimeMillis() - startTime
                     println("🎉 客服機器人執行完成")
                     println("   Agent ID：${eventContext.agentId}")
                     println("   執行 ID：${eventContext.runId}")
+                    println("   處理完成，耗時：${duration}ms")
                     println("=".repeat(50))
                 }
 
                 // 當發生錯誤時
                 onAgentRunError { eventContext ->
-                    println("⚠️  客服系統發生問題：")
+                    errorCount++
+                    println("⚠️ 客服系統發生問題：")
+                    println("   第 $errorCount 次錯誤：")
                     println("   錯誤訊息：${eventContext.throwable.message}")
                     println("   Agent ID：${eventContext.agentId}")
                     println("   發生時間：${LocalDateTime.now()}")
@@ -90,6 +107,11 @@ class EventCustomerServiceBot {
                         else ->
                             println("   建議：請檢查設定或聯繫技術支援")
                     }
+
+                    if (errorCount >= 3) {
+                        println("🚨 連續錯誤過多，建議檢查系統狀態")
+                    }
+
                     println("=".repeat(50))
                 }
             }
