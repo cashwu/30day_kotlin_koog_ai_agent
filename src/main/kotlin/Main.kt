@@ -19,7 +19,8 @@ suspend fun main() {
 
     // 流式執行
     println("AI 正在回應...")
-    executor.executeStreaming(prompt, OpenAIModels.CostOptimized.GPT4_1Mini)
+    val robustStreamingChat = RobustStreamingChat(executor)
+    robustStreamingChat.streamWithRetry(prompt, OpenAIModels.CostOptimized.GPT4_1Mini)
         .collect { token ->
             // 即時輸出每個文字片段
             print(token)
