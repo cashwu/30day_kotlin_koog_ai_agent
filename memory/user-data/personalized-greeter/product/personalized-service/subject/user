@@ -1,0 +1,14 @@
+{
+    "user-info": [
+        {
+            "type": "ai.koog.agents.memory.model.SingleFact",
+            "concept": {
+                "keyword": "user-info",
+                "description": "使用者的基本資訊，包含姓名和偏好",
+                "factType": "SINGLE"
+            },
+            "timestamp": 1755224556246,
+            "value": "Cash"
+        }
+    ]
+}

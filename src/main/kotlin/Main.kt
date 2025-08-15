@@ -1,53 +1,58 @@
 package com.cashwu
 
-import ai.koog.prompt.cache.memory.InMemoryPromptCache
-import ai.koog.prompt.executor.clients.openai.OpenAIModels
-import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
-import ai.koog.prompt.executor.model.PromptExecutorExt.execute
-import ai.koog.prompt.cache.model.PromptCache
-import ai.koog.prompt.cache.redis.RedisPromptCache
-import ai.koog.prompt.dsl.prompt
-import ai.koog.prompt.executor.cached.CachedPromptExecutor
-import io.lettuce.core.RedisClient
-import kotlin.time.Duration.Companion.days
+import kotlinx.coroutines.delay
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
+    val greeter = PersonalizedGreeter()
 
-    // 建立快取
-    val cache = InMemoryPromptCache(maxEntries = 100)
+    println("🤖 個人化問候助手啟動")
+    println("=".repeat(50))
 
-    // 執行器
-    val executor = simpleOpenAIExecutor(ApiKeyManager.openAIApiKey!!)
+    // === 第一次互動：新使用者 ===
+    println("\n👋 第一次見面")
+    println("=".repeat(20))
 
-    // 包裝成快取執行器
-    val cachedExecutor = CachedPromptExecutor(
-        cache,
-        executor
+    val firstResponse = greeter.greetUser(
+        userInput = "你好"
     )
 
-    val prompt = prompt("memory") {
-        system {
-            text(
-                """
-                你是一個友善的 AI 助手
-                請使用正體中文回答
-            """.trimIndent()
-            )
-        }
-        user {
-            text("什麼是 Kotlin 協程？請簡單的說明")
-        }
-    }
+    println("使用者：你好")
+    println("助手：${firstResponse.response}")
+    println("📊 記憶體狀態：${if (firstResponse.hasMemory) "有記憶" else "無記憶"}")
 
-    println("=== 第一次詢問（會呼叫 API）===")
-    var response = cachedExecutor.execute(prompt, OpenAIModels.CostOptimized.GPT4_1Mini)
-    println("$response")
-    println("\nAI : ${response.content}")
+    delay(1000)
 
-    println("\n=== 第二次詢問相同問題（使用 memory 快取）===")
-    response = cachedExecutor.execute(prompt, OpenAIModels.CostOptimized.GPT4_1Mini)
-    println("\n$response")
-    println("\nAI : ${response.content}")
+    // === 自我介紹：儲存姓名 ===
+    println("\n📝 自我介紹")
+    println("=".repeat(20))
+
+    val introResponse = greeter.greetUser(
+        userInput = "我是 Cash"
+    )
+
+    println("使用者：我是 Cash")
+    println("助手：${introResponse.response}")
+    println("📊 記憶體狀態：${if (introResponse.hasMemory) "有記憶" else "無記憶"}")
+    println("👤 記住的姓名：${introResponse.userName ?: "未記住"}")
+
+    delay(1000)
+
+    // === 第二次互動：展現記憶 ===
+    println("\n🎯 個人化服務")
+    println("=".repeat(20))
+
+    val personalizedResponse = greeter.greetUser(
+        userInput = "今天天氣如何？"
+    )
+
+    println("使用者：今天天氣如何？")
+    println("助手：${personalizedResponse.response}")
+    println("📊 記憶體狀態：${if (personalizedResponse.hasMemory) "有記憶" else "無記憶"}")
+    println("👤 識別身份：${personalizedResponse.userName ?: "未識別"}")
+
+    delay(1000)
+
+    println("\n✨ 記憶體系統展示完成！")
 }
