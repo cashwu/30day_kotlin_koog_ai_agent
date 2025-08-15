@@ -6,25 +6,34 @@ import kotlinx.coroutines.delay
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
 
-    // 建立客服機器人
-    val bot = EventCustomerServiceBot().createBot()
+    val router = QueryRouter()
 
-    // 模擬客戶對話
-    val customerQuestions = listOf(
-        "你好，請問你們的營業時間是什麼時候？",
-        "運費是怎麼計算的？"
+    println("🚀 QueryRouter 策略路由測試")
+    println("=".repeat(50))
+
+    // 測試案例
+    val testQueries = listOf(
+        "你們的營業時間是什麼？",                 // 簡單問題
+        "我的產品無法正常運作，需要協助解決",        // 複雜問題
     )
 
-    customerQuestions.forEach { question ->
-        println("👤 客戶問題：$question")
+    testQueries.forEachIndexed { index, query ->
+        println("\n📋 測試 ${index + 1}: $query")
 
-        try {
-            val response = bot.run(question)
-            println("🤖 客服回應：$response")
-        } catch (e: Exception) {
-            println("💥 處理失敗：${e.message}")
+        val result = router.handleQuery(query)
+
+        val strategyIcon = if (result.isComplex) "🤖" else "⚡"
+        val strategyName = if (result.isComplex) "深度支援" else "快速回應"
+
+        println("$strategyIcon 選擇策略: $strategyName")
+        println("⏱️  處理時間: ${result.processingTimeMs}ms")
+        println("💭 AI 回應: ${result.answer}")
+
+        if (index < testQueries.size - 1) {
+            println("=".repeat(50))
         }
-
-        println("\n" + "=".repeat(60) + "\n")
     }
+
+    println("\n✨ 測試完成！策略路由成功運作")
+
 }
