@@ -1,39 +1,29 @@
 package com.cashwu
 
-import kotlinx.coroutines.delay
+import ai.koog.prompt.dsl.prompt
+import ai.koog.prompt.executor.clients.openai.OpenAIModels
+import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
 
-    val router = QueryRouter()
+    // 建立執行器
+    val executor = simpleOpenAIExecutor(ApiKeyManager.openAIApiKey!!)
 
-    println("🚀 QueryRouter 策略路由測試")
-    println("=".repeat(50))
-
-    // 測試案例
-    val testQueries = listOf(
-        "你們的營業時間是什麼？",                 // 簡單問題
-        "我的產品無法正常運作，需要協助解決",        // 複雜問題
-    )
-
-    testQueries.forEachIndexed { index, query ->
-        println("\n📋 測試 ${index + 1}: $query")
-
-        val result = router.handleQuery(query)
-
-        val strategyIcon = if (result.isComplex) "🤖" else "⚡"
-        val strategyName = if (result.isComplex) "深度支援" else "快速回應"
-
-        println("$strategyIcon 選擇策略: $strategyName")
-        println("⏱️  處理時間: ${result.processingTimeMs}ms")
-        println("💭 AI 回應: ${result.answer}")
-
-        if (index < testQueries.size - 1) {
-            println("=".repeat(50))
-        }
+    // 建立提示
+    val prompt = prompt("streaming") {
+        system("你是一個友善的 AI 助手，請使用正體中文回答問題")
+        user("請簡單的說明，什麼是 Kotlin 的協程")
     }
 
-    println("\n✨ 測試完成！策略路由成功運作")
+    // 流式執行
+    println("AI 正在回應...")
+    executor.executeStreaming(prompt, OpenAIModels.CostOptimized.GPT4_1Mini)
+        .collect { token ->
+            // 即時輸出每個文字片段
+            print(token)
+        }
 
+    println("\n回應完成！")
 }
