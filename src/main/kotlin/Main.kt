@@ -13,7 +13,7 @@ suspend fun main() {
     println("🧪 開始容錯切換測試...")
 
     // 建立容錯執行器
-    val resilientExecutor = ResilientExecutor(
+    val resilientExecutor = AdvancedResilientExecutor(
         primaryExecutor = FailingExecutor(),
         primaryModel = OpenAIModels.CostOptimized.GPT4_1Mini,
         fallbackExecutor = simpleGoogleAIExecutor(ApiKeyManager.googleApiKey!!),
