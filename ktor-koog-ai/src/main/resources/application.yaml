@@ -1,0 +1,11 @@
+ktor:
+  application:
+    modules:
+      - com.cashwu.ApplicationKt.module
+  deployment:
+    port: 8081
+
+# AI 配置
+ai:
+  openai:
+    api-key: your-api-key

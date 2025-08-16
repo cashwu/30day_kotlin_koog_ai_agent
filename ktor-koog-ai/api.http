@@ -1,0 +1,16 @@
+### GET request to example server
+GET https://examples.http-client.intellij.net/get
+    ?generated-in=IntelliJ IDEA
+
+###
+
+GET localhost:8081/
+
+###
+
+POST localhost:8081/api/chat
+Content-Type: application/json
+
+{
+  "message": "請簡單的說明，什麼是 Kotlin 的協程"
+}
