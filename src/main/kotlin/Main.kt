@@ -10,11 +10,11 @@ import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
 
-    println("🤖 容錯執行器測試啟動")
+    println("🧪 開始容錯切換測試...")
 
     // 建立容錯執行器
     val resilientExecutor = ResilientExecutor(
-        primaryExecutor = simpleOpenAIExecutor(ApiKeyManager.openAIApiKey!!),
+        primaryExecutor = FailingExecutor(),
         primaryModel = OpenAIModels.CostOptimized.GPT4_1Mini,
         fallbackExecutor = simpleGoogleAIExecutor(ApiKeyManager.googleApiKey!!),
         fallbackModel = GoogleModels.Gemini2_5Flash
