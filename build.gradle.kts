@@ -21,6 +21,8 @@ dependencies {
 
     // JSON 序列化 - 用於 API 回應解析
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+
+    implementation("io.opentelemetry:opentelemetry-exporter-otlp:1.53.0")
 }
 
 tasks.test {

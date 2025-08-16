@@ -7,6 +7,7 @@ import ai.koog.agents.features.opentelemetry.feature.OpenTelemetry
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import io.opentelemetry.api.common.AttributeKey
+import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter
 import io.opentelemetry.sdk.trace.samplers.Sampler
 
 class SimpleMonitoring {
@@ -39,6 +40,13 @@ class SimpleMonitoring {
                     AttributeKey.stringKey("custom.attribute") to "custom-value",
                 ),
             )
+
+            addSpanExporter(
+                OtlpGrpcSpanExporter.builder()
+                    .setEndpoint("http://localhost:4317")
+                    .build()
+            )
+
         }
     }
 
