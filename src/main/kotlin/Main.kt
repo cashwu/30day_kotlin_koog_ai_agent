@@ -12,42 +12,28 @@ import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
+    val customerService = SmartCustomerServiceAgent()
 
-    val processor = OrderProcessingAgent()
+    println("=== 智慧客服系統演示 ===\n")
 
-    println("=== 訂單處理策略圖演示 ===\n")
+    val testQueries = listOf(
+        "你好，我想查詢 ORDER001 的訂單狀態",
+        "我的商品有問題，沒有辦法開機，有沒有辦法換新的，我真的很生氣，可不可以請人跟我聯絡",
+        "請問你們的營業時間是什麼時候？"
+    )
 
-    // 測試正常訂單
-    val validOrder = """
-        客戶：張小明
-        商品：筆記型電腦
-        金額：50000
-    """.trimIndent()
+    testQueries.forEachIndexed { index, query ->
+        println("📞 客戶諮詢 ${index + 1}：$query")
+        println("=".repeat(50))
 
-    println("📝 處理正常訂單：")
-    try {
-        val result = processor.processOrder(validOrder)
-        println("\n🎯 處理結果：")
-        println(result)
-    } catch (e: Exception) {
-        println("❌ 處理失敗：${e.message}")
-    }
+        try {
+            val response = customerService.handleCustomerQuery(query)
+            println("\n🤖 客服回應：")
+            println(response)
+        } catch (e: Exception) {
+            println("❌ 處理失敗：${e.message}")
+        }
 
-    println("\n" + "=".repeat(50) + "\n")
-
-    // 測試異常訂單
-    val invalidOrder = """
-        客戶：李小華
-        商品：智慧型手機
-        // 缺少金額資訊
-    """.trimIndent()
-
-    println("📝 處理異常訂單：")
-    try {
-        val result = processor.processOrder(invalidOrder)
-        println("\n🎯 處理結果：")
-        println(result)
-    } catch (e: Exception) {
-        println("❌ 處理失敗：${e.message}")
+        println("\n" + "=".repeat(60) + "\n")
     }
 }
