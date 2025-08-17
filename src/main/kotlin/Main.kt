@@ -13,14 +13,18 @@ import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
 
-    // 建立整合了 Context7 MCP 工具的 AI Agent
-    val agent = createContext7Agent(ApiKeyManager.openAIApiKey!!)
+    // 建立整合了 Playwright MCP 工具的 AI Agent
+    val agent = createPlaywrightAgent(ApiKeyManager.openAIApiKey!!)
 
-    val query = "如何在 Koog 中整合 MCP 工具？"
+    val task = """
+        打開瀏覽器，幫我到 https://blog.cashwu.com 網站，
+        然後到「關於我」的相關頁面，
+        然後給我作者相關的自我介紹
+    """.trimIndent()
 
     try {
-        println("\n正在查詢... $query")
-        val response = agent.run(query)
+        println("\n正在執行任務... $task")
+        val response = agent.run(task)
         println("\n回應: $response")
     } catch (e: Exception) {
         println("\n錯誤: ${e.message}")
@@ -29,62 +33,65 @@ suspend fun main() {
 
 
 /**
- * 建立整合 Context7 的 AI Agent
+ * 建立整合 Playwright 的 AI Agent
  */
-suspend fun createContext7Agent(apiKey: String): AIAgent<String, String> {
+suspend fun createPlaywrightAgent(apiKey: String): AIAgent<String, String> {
     return AIAgent(
         executor = simpleOpenAIExecutor(apiKey),
         strategy = singleRunStrategy(),
-        systemPrompt = createSystemPrompt(),
+        systemPrompt = createPlaywrightSystemPrompt(),
         llmModel = OpenAIModels.CostOptimized.GPT4_1Mini,
-        toolRegistry = createToolRegistry()
+        toolRegistry = createPlaywrightToolRegistry()
     )
 }
 
 /**
- * 建立包含 Context7 MCP 工具的註冊表
+ * 建立包含 Playwright MCP 工具的註冊表
  */
-suspend fun createToolRegistry(): ToolRegistry {
+suspend fun createPlaywrightToolRegistry(): ToolRegistry {
     // 基礎工具
     val basicTools = ToolRegistry {
-        tool(SayToUser)
         tool(AskUser)
     }
 
-    // Context7 MCP 工具
-    val context7Registry = createContext7McpRegistry()
+    // Playwright MCP 工具
+    val playwrightRegistry = createPlaywrightMcpRegistry()
 
     // 合併工具註冊表
-    return basicTools + context7Registry
+    return basicTools + playwrightRegistry
 }
 
 /**
- * 系統提示詞
+ * Playwright 系統提示詞
  */
-fun createSystemPrompt(): String {
+fun createPlaywrightSystemPrompt(): String {
     return """
-        你是一個專業的 AI 開發助手，具備以下能力
+        你是一個專業的網頁自動化助手，具備以下能力
 
-        1. 回答 Koog AI 框架相關問題
-        2. 使用 Context7 工具查詢最新的 API 文件和程式碼範例
-        3. 提供準確、即時的技術支援
+        1. 使用瀏覽器自動化工具執行網頁操作
+        2. 瀏覽指定網站並與頁面元素互動
+        3. 擷取網頁內容並分析結果
+        4. 執行複雜的多步驟網頁操作流程
 
-        當開發者詢問 Koog 相關的 API 用法時，請主動使用 Context7 工具查詢最新文件
-        請確保提供的資訊是最新且正確的，而且使用正體中文回答
+        當用戶要求執行網頁相關任務時，請使用 Playwright 工具進行自動化操作
+        請確保操作步驟清晰且符合網站的使用條款，而且使用正體中文回答
     """.trimIndent()
 }
 
 /**
- * 建立 Context7 MCP 工具註冊表
+ * 建立 Playwright MCP 工具註冊表
  */
-suspend fun createContext7McpRegistry(): ToolRegistry {
-    // 啟動 Context7 MCP 服務程序
-    val context7Process = ProcessBuilder(
-        "npx", "-y", "@upstash/context7-mcp"
+suspend fun createPlaywrightMcpRegistry(): ToolRegistry {
+    // 啟動 Playwright MCP 服務程序
+    val playwrightProcess = ProcessBuilder(
+        "npx", "@playwright/mcp@latest", "--port", "8931"
     ).start()
 
-    // 建立標準輸入輸出傳輸通道
-    val transport = McpToolRegistryProvider.defaultStdioTransport(context7Process)
+    // 等待服務啟動
+    Thread.sleep(3000)
+
+    // 建立 SSE 傳輸通道
+    val transport = McpToolRegistryProvider.defaultSseTransport("http://localhost:8931")
 
     // 從傳輸通道建立工具註冊表
     return McpToolRegistryProvider.fromTransport(transport)
