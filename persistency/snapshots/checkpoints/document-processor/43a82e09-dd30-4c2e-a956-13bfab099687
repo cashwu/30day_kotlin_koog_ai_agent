@@ -1,0 +1,15 @@
+{
+    "checkpointId": "43a82e09-dd30-4c2e-a956-13bfab099687",
+    "createdAt": "2025-08-18T14:52:04.472387Z",
+    "nodeId": "__start__",
+    "lastInput": "這是一份關於 AI 技術發展趨勢的研究報告草稿 (請模擬生成一份報告)",
+    "messageHistory": [
+        {
+            "type": "ai.koog.prompt.message.Message.System",
+            "content": "你是一個專業的文件處理助手",
+            "metaInfo": {
+                "timestamp": "2025-08-18T14:52:04.441187Z"
+            }
+        }
+    ]
+}
