@@ -1,28 +1,28 @@
 package com.cashwu
 
+import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.memory.model.*
+import ai.koog.prompt.executor.clients.openai.OpenAIModels
+import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
+import jdk.internal.agent.Agent
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
-    val sanitizer = DataSanitizer()
 
-    // 測試案例
-    val testInputs = listOf(
-        "我的信用卡號是 1234-5678-9012-3456",
-        "請聯繫我：john.doe@example.com",
-        "我的卡號是 1234567890123456，信箱是 test@gmail.com",
-        "今天天氣很好" // 正常文字
+    val chatBot = SecureChatBot()
+
+    // 模擬用戶對話
+    val userInputs = listOf(
+        "你好！我想了解一下你的功能",
+        "我的信用卡號是 1234-5678-9012-3456，能幫我查詢餘額嗎？",
+        "如果有問題可以聯繫我：user@example.com"
     )
 
-    testInputs.forEach { input ->
-        val result = sanitizer.sanitize(input)
-
-        println("原始輸入：$input")
-        println("脫敏結果：${result.sanitizedText}")
-        if (result.hasSensitiveData) {
-            println("檢測到：${result.detectedTypes.joinToString(", ")}")
-        }
-        println("---")
+    userInputs.forEach { input ->
+        println("\n用戶：$input")
+        val response = chatBot.chat(input)
+        println("機器人：$response")
+        println("==".repeat(30))
     }
 }

@@ -45,10 +45,10 @@ class DataSanitizer {
     }
 }
 
-// 脫敏結果資料類別
+// 遮罩結果資料類別
 data class SanitizationResult(
     val originalText: String,       // 原始文字
-    val sanitizedText: String,      // 脫敏後文字
+    val sanitizedText: String,      // 遮罩後文字
     val detectedTypes: List<String>, // 檢測到的敏感資料類型
     val hasSensitiveData: Boolean   // 是否包含敏感資料
 )
