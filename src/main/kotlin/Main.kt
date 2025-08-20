@@ -1,27 +1,24 @@
 package com.cashwu
 
+import ai.koog.embeddings.local.LLMEmbedder
+import ai.koog.prompt.executor.clients.openai.OpenAILLMClient
+import ai.koog.prompt.executor.clients.openai.OpenAIModels
+
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
 
-    // 建立客服助手 Agent
-    val customerServiceAgent = CustomerServiceAgent()
+    // 建立 OpenAI 用戶端
+    val client = OpenAILLMClient(ApiKeyManager.openAIApiKey!!)
 
-    // 模擬客戶詢問
-    val inquiries = listOf(
-        "我的訂單 ORD-2025-001 什麼時候會到貨？",
-        "產品有品質問題，我要退貨！",
-        "如何更改我的會員資料？",
-        "APP 一直當機，無法正常使用"
-    )
+    // 建立嵌入器，使用 TextEmbeddingAda002 模型
+    val embedder = LLMEmbedder(client, OpenAIModels.Embeddings.TextEmbedding3Small)
 
-    // 處理每個客戶詢問
-    inquiries.forEach { inquiry ->
-        println("\n客戶詢問：$inquiry")
-        println("=".repeat(50))
+    // 產生文字嵌入
+    val text = "Kotlin 是一個現代的程式語言"
+    val embedding = embedder.embed(text)
 
-        val response = customerServiceAgent.handleInquiry(inquiry)
-        println(response)
-        println()
-    }
+    println("文字：$text")
+    println("向量維度：${embedding.dimension}")
+    println("向量前 5 個值：${embedding.values.take(5)}")
 }
