@@ -49,4 +49,16 @@ class CustomerServiceTools(
 
         return sb.toString()
     }
+
+    suspend fun adaptiveSearch(query: String, storage: EmbeddingBasedDocumentStorage<Path>): List<Path> {
+        // 先用高閾值搜尋
+        var results = storage.mostRelevantDocuments(query, count = 3, similarityThreshold = 0.8).toList()
+
+        // 如果結果太少，降低閾值
+        if (results.size < 2) {
+            results = storage.mostRelevantDocuments(query, count = 5, similarityThreshold = 0.6).toList()
+        }
+
+        return results
+    }
 }
