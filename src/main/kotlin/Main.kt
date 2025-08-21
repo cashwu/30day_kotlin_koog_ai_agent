@@ -1,116 +1,93 @@
 package com.cashwu
 
-import ai.koog.embeddings.local.LLMEmbedder
-import ai.koog.embeddings.local.OllamaEmbeddingModels
-import ai.koog.prompt.executor.ollama.client.OllamaClient
-import ai.koog.rag.base.mostRelevantDocuments
-import ai.koog.rag.vector.EmbeddingBasedDocumentStorage
-import ai.koog.rag.vector.JVMFileVectorStorage
-import ai.koog.rag.vector.JVMTextDocumentEmbedder
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.nio.file.Path
+import ai.koog.agents.core.agent.AIAgent
+import ai.koog.agents.core.tools.annotations.LLMDescription
+import ai.koog.prompt.dsl.prompt
+import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
+import ai.koog.prompt.llm.LLMCapability
+import ai.koog.prompt.llm.LLMProvider
+import ai.koog.prompt.llm.LLModel
+import ai.koog.prompt.structure.executeStructured
+import ai.koog.prompt.structure.json.JsonSchemaGenerator
+import ai.koog.prompt.structure.json.JsonStructuredData
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() {
-    val embedder = LLMEmbedder(OllamaClient(), OllamaEmbeddingModels.NOMIC_EMBED_TEXT)
-    val documentEmbedder = JVMTextDocumentEmbedder(embedder)
-    val fileVectorStorage = JVMFileVectorStorage(root = Path.of("./vector-storage"))
-    val documentStorage = EmbeddingBasedDocumentStorage(documentEmbedder, fileVectorStorage)
+// 建立自定義的 GPT-5 模型配置
+    val customGPT5 = LLModel(
+        provider = LLMProvider.OpenAI,
+        id = "gpt-5-mini",
+        capabilities = listOf(
+            LLMCapability.Temperature,
+            LLMCapability.Tools,
+            LLMCapability.Schema.JSON.Simple,
+            LLMCapability.PromptCaching,
+            LLMCapability.Completion
+        )
+    )
 
-    val manager = KnowledgeBaseManager(documentStorage)
-    val result = manager.loadKnowledgeBase()
+    // 建立執行器
+    val executor = simpleOpenAIExecutor(ApiKeyManager.openAIApiKey!!)
 
-    println("\n知識庫載入完成：")
-    println("成功：${result.successCount} 個文件")
-    if (result.failureCount > 0) {
-        println("失敗：${result.failureCount} 個文件")
-        println("失敗清單：${result.failedFiles.joinToString(", ")}")
-    }
+    // 產生結構化資料定義
+    val weatherStructure = JsonStructuredData.createJsonStructure<WeatherForecast>(
+        schemaFormat = JsonSchemaGenerator.SchemaFormat.JsonSchema,
+        schemaType = JsonStructuredData.JsonSchemaType.SIMPLE,
+    )
+
+    // 執行結構化查詢
+    val forecast = executor.executeStructured(
+        prompt = prompt("weather-forecast") {
+            system(
+                """
+                你是一位專業的天氣預報員。
+                請根據用戶提供的城市，提供詳細的天氣預報。
+                請確保所有數值都在合理範圍內。
+                (為了測試需要，請給我相關的假天氣資料)
+                """.trimIndent()
+            )
+            user("請提供台北市明天的天氣預報")
+        },
+        mainModel = customGPT5,
+        structure = weatherStructure,
+        retries = 3
+    )
+
+    // 處理結果
+    forecast.fold(
+        onSuccess = { response ->
+            val weatherData = response.structure
+            println("天氣預報資訊：")
+            println("溫度：${weatherData.temperature}°C")
+            println("天氣狀況：${weatherData.conditions}")
+            println("降雨機率：${weatherData.rainChance}%")
+            println("穿著建議：${weatherData.clothingRecommendation}")
+            println("紫外線指數：${weatherData.uvIndex}")
+        },
+        onFailure = { error ->
+            println("取得天氣預報失敗：${error.message}")
+        }
+    )
 }
 
-class BatchDocumentProcessor(
-    private val documentStorage: EmbeddingBasedDocumentStorage<Path>,
-    private val batchSize: Int = 50
-) {
-    suspend fun processBatch(documentPaths: List<Path>) {
-        documentPaths.chunked(batchSize).forEach { batch ->
-            withContext(Dispatchers.IO) {
-                batch.forEach { path ->
-                    try {
-                        documentStorage.store(path)
-                        println("✓ 已處理：${path.fileName}")
-                    } catch (e: Exception) {
-                        println("✗ 處理失敗：${path.fileName} - ${e.message}")
-                    }
-                }
-            }
-            println("已完成 ${batch.size} 個文件的處理")
-        }
-    }
-}
+@Serializable
+@SerialName("WeatherForecast")
+data class WeatherForecast(
+    @property:LLMDescription("攝氏溫度")
+    val temperature: Int,
 
-class SearchCache {
-    private val cache = mutableMapOf<String, Pair<List<Path>, Long>>()
-    private val cacheTimeout = 300_000L // 5 分鐘
+    @property:LLMDescription("天氣狀況描述，例如：晴朗、多雲、下雨")
+    val conditions: String,
 
-    fun getCachedResults(query: String): List<Path>? {
-        val cached = cache[query] ?: return null
-        return if (System.currentTimeMillis() - cached.second < cacheTimeout) {
-            cached.first
-        } else {
-            cache.remove(query)
-            null
-        }
-    }
+    @property:LLMDescription("降雨機率，範圍 0-100")
+    val rainChance: Int,
 
-    fun cacheResults(query: String, results: List<Path>) {
-        cache[query] = Pair(results, System.currentTimeMillis())
-    }
-}
+    @property:LLMDescription("建議穿著")
+    val clothingRecommendation: String,
 
-class SmartSearchManager(
-    private val documentStorage: EmbeddingBasedDocumentStorage<Path>,
-    private val cache: SearchCache = SearchCache()
-) {
-    suspend fun smartSearch(
-        query: String,
-        maxResults: Int = 5,
-        useCache: Boolean = true
-    ): List<Path> {
-        // 先檢查快取
-        if (useCache) {
-            cache.getCachedResults(query)?.let { return it }
-        }
-
-        // 分階段搜尋策略
-        val results = when {
-            // 簡單關鍵字：使用寬鬆閾值
-            query.split(" ").size <= 2 -> {
-                documentStorage.mostRelevantDocuments(
-                    query, maxResults, similarityThreshold = 0.6
-                ).toList()
-            }
-            // 複雜問題：使用中等閾值
-            query.length > 20 -> {
-                documentStorage.mostRelevantDocuments(
-                    query, maxResults, similarityThreshold = 0.7
-                ).toList()
-            }
-            // 預設情況
-            else -> {
-                documentStorage.mostRelevantDocuments(
-                    query, maxResults, similarityThreshold = 0.65
-                ).toList()
-            }
-        }
-
-        // 將結果存入快取
-        if (useCache && results.isNotEmpty()) {
-            cache.cacheResults(query, results)
-        }
-
-        return results
-    }
-}
+    @property:LLMDescription("紫外線指數，範圍 0-11")
+    val uvIndex: Int
+)
